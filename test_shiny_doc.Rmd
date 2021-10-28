@@ -1,0 +1,260 @@
+---
+# title: "Untitled"
+# author: "Hugo Cosh"
+# date: "21/10/2021"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages
+library(tidyverse)
+library(plotly)
+library(DT)
+
+# Load ONS mortality dataset from NHSR datasets package
+ons_mortality_subset <- readRDS("nhs-r_ons_mortality_subset.rds")
+
+```
+
+
+![](nhs-r_logo_small.png)
+
+## Shiny doesn't have to be scary: an easy way in with RMarkdown  
+  
+This RMarkdown document uses the shiny package to produce interactive charts.  
+  
+  
+***
+
+The charts show data from the ONS mortality dataset held within the NHS-R
+datasets package (more info [here](https://nhs-r-community.github.io/NHSRdatasets/)).
+The data runs from January 2021 to 3rd April 2021, the start of the Covid-19 pandemic.  
+The coverage is England and Wales unless otherwise stated.
+
+***
+
+
+```{r dropdowns, echo=FALSE}
+
+# dropdown for category 1
+  selectInput("category_1_dropdown", label = "Category 1",
+              choices = unique(ons_mortality_subset$category_1_recoded))
+
+# dropdown for category 2
+  selectInput("category_2_dropdown", label = "Category 2",
+              choices = unique(ons_mortality_subset$category_2_recoded))
+
+  
+# Use 'observe' to update the category 2 dropdown menu based on the choices in category 1
+
+observe({ updateSelectInput(
+          session, inputId = 'category_2_dropdown', choices =
+            ons_mortality_subset$category_2_recoded[
+              ons_mortality_subset$category_1_recoded == input$category_1_dropdown
+              ]
+          )
+})
+
+
+```
+
+
+***
+  
+### Stage 1  
+
+This is the more simple version of the chart:
+
+```{r chart1, echo=FALSE}
+
+# use renderText to make the interactive chart title
+renderText({
+  paste0(input$category_1_dropdown
+         , ", "
+         , input$category_2_dropdown
+         , ", Jan to April 2021")
+})
+
+# use renderText to make the interactive chart
+renderPlot({
+            ons_mortality_subset %>%
+              filter(category_1_recoded == input$category_1_dropdown
+                     , category_2_recoded == input$category_2_dropdown
+                      ) %>%
+            ggplot(aes(x = date, y = counts)) + geom_line()
+})
+
+```
+
+***
+  
+### Stage 2  
+
+This is the more complex version of the buttons and chart, using fluidRow.  
+Using fluidRow, we have put the buttons onto one line and added formatting to the chart title text.  
+We have also used fluidRow to put text alongside the chart.  
+  
+Finally, the ggplot chart has been converted to plotly, providing hover-over tooltips and
+easy download functionality.  It's pretty straightforward to convert a ggplot chart
+to a plotly chart, using [ggplotly](https://rdrr.io/cran/plotly/man/ggplotly.html)
+
+
+```{r dropdowns_fluid, echo=FALSE}
+
+# Use fluidRow to put the buttons side-by-side on the same row
+fluidRow(
+  
+      column(4
+         ,  selectInput("category_1_dropdown_fluid", label = "Category 1",
+              choices = unique(ons_mortality_subset$category_1_recoded)))
+    , column(4  
+         , selectInput("category_2_dropdown_fluid", label = "Category 2",
+              choices = unique(ons_mortality_subset$category_2_recoded)))
+)
+  
+# Use 'observe' to update the category 2 dropdown menu based on the choices in category 1
+
+observe({ updateSelectInput(
+          session, inputId = 'category_2_dropdown_fluid', choices =
+            ons_mortality_subset$category_2_recoded[
+              ons_mortality_subset$category_1_recoded == input$category_1_dropdown_fluid
+              ]
+          )
+})
+
+
+```
+
+
+```{r chart2, echo=FALSE}
+
+# With fluidRow, you can adjust the width of the box and add styling to the font
+fluidRow(
+  
+      column(10
+         , renderText({
+         paste0(input$category_1_dropdown_fluid
+         , ", "
+         , input$category_2_dropdown_fluid
+         , ", Jan to April 2021")
+           })
+         , style = "color: blue; font-size:13px; font-weight: bold;"
+      )
+) # end of fluidRow
+      
+# Here, fluidRow is used to put the chart in one column and some text in another
+# column alongside
+fluidRow(
+  
+      column(8
+             , renderPlotly({   # this time we are using renderPlotly to show a plotly chart
+                gg <- ons_mortality_subset %>%
+                        filter(category_1_recoded == input$category_1_dropdown_fluid
+                             , category_2_recoded == input$category_2_dropdown_fluid
+                          ) %>%
+                        ggplot(aes(x = date, y = counts)) + geom_line() 
+                ggplotly(gg)    # the ggploty function turns the ggplot object into a plotly chart
+            })
+      )
+      , column(4
+        ,"This text has been inserted into four columns of the twelve available
+            in a fluidRow. The chart takes up the other eight columns.  This text
+            could be written to describe the chart, and potentially made interactive
+            by adding text to a column in the dataframe"
+      )
+) # end of fluidRow
+
+
+
+                              
+```
+
+
+### Tabbed pages {.tabset}
+
+To start a set of tabbed pages, simply add {.tabset} after a heading, and then
+all subsequent lower-level headings will automatically become tabbed pages. 
+By 'lower-level', we mean that if you add {.tabset} after a title starting with
+"###", then all subsequent headings starting with "####" will become tabbed pages.
+
+```{r dropdowns_tabbed, echo=FALSE}
+
+fluidRow(
+  
+      column(4
+         ,  selectInput("category_1_dropdown_tabbed", label = "Category 1",
+              choices = unique(ons_mortality_subset$category_1_recoded)))
+    , column(4  
+         , selectInput("category_2_dropdown_tabbed", label = "Category 2",
+              choices = unique(ons_mortality_subset$category_2_recoded)))
+)
+
+observe({ updateSelectInput(
+          session, inputId = 'category_2_dropdown_tabbed', choices =
+            ons_mortality_subset$category_2_recoded[
+              ons_mortality_subset$category_1_recoded == input$category_1_dropdown_tabbed
+              ]
+          )
+})
+
+```
+
+#### Chart (plotly)
+
+```{r tab1, echo = FALSE}
+
+fluidRow(
+      column(10
+         , renderText({
+         paste0(input$category_1_dropdown_tabbed
+         , ", "
+         , input$category_2_dropdown_tabbed
+         , ", Jan to April 2021")
+           })
+         , style = "color: black; font-size:13px; font-weight: bold;"
+      )
+) # end of fluidRow
+
+renderPlotly({
+                gg <- ons_mortality_subset %>%
+                        filter(category_1_recoded == input$category_1_dropdown_tabbed
+                             , category_2_recoded == input$category_2_dropdown_tabbed
+                          ) %>%
+                        ggplot(aes(x = date, y = counts)) + geom_line() 
+                ggplotly(gg)
+            })
+
+```
+
+#### Table
+
+```{r table , echo = FALSE}
+
+renderDT({
+  datatable(
+               ons_mortality_subset %>%
+                        filter(category_1_recoded == input$category_1_dropdown_tabbed
+                             , category_2_recoded == input$category_2_dropdown_tabbed
+                              )
+  # DT options: https://rstudio.github.io/DT/options.html
+  , options = list(
+    dom = 't'  # include the table ('t') and pagination ('p'), but not search box ('s')
+    , pageLength = 5  # show five rows in the table
+  )
+  )
+})
+
+
+
+```
+
+
+***
+
+![](observatory_logo_small.png)
+
+Zoe Strawbridge / Hugo Cosh, November 2021
