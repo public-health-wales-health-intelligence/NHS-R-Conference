@@ -1,6 +1,11 @@
 # NHS-R-Conference
 
-Please find a copy of all videos discussed with descriptive audio below
+Please find a copy of all videos discussed with descriptive audio below.  The following files are also included in this repository:  
+**test_shiny_doc.Rmd** This is the main RMarkdown script that is built in the videos.  
+**nhs-r_ons_mortality_subset.rds** This is the data file used by the main RMarkdown script
+**nhsr_dataset_ons_mortality_subset.R** This is the R code that made the data file used by the main RMarkdown script
+**nhs-r_logo_small.png** This is the NHS-R logo used by the main RMarkdown script
+**observatory_logo_small.png** This is the Public Health Wales Observatory logo used by the main RMarkdown script 
 
 
 ##  Video 1 
